@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 	http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,17 +20,17 @@ import gaffer.exception.SerialisationException;
 import gaffer.serialisation.Serialisation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /**
- * This class is used to serialise and deserialise objects in java
+ * This class is used to serialise and deserialise objects in java.
  */
 public class JavaSerialiser implements Serialisation {
     private static final long serialVersionUID = 2073581763875104361L;
@@ -54,18 +54,11 @@ public class JavaSerialiser implements Serialisation {
     }
 
     public Object deserialise(final byte[] bytes) throws SerialisationException {
-        ObjectInputStream is;
-        try {
-            is = new ObjectInputStream(new ByteArrayInputStream(bytes));
-        } catch (IOException e) {
-            throw new SerialisationException("Unable to deserialise object, failed to read input bytes", e);
-        }
-        try {
+        try (final InputStream inputStream = new ByteArrayInputStream(bytes);
+             final ObjectInputStream is = new ObjectInputStream(inputStream)) {
             return is.readObject();
         } catch (ClassNotFoundException | IOException e) {
             throw new SerialisationException("Unable to deserialise object, failed to recreate object", e);
-        } finally {
-            close(is);
         }
     }
 
@@ -73,7 +66,7 @@ public class JavaSerialiser implements Serialisation {
         return clazz.cast(this.deserialise(bytes));
     }
 
-    private void close(Closeable close) {
+    private void close(final Closeable close) {
         if (close != null) {
             try {
                 close.close();

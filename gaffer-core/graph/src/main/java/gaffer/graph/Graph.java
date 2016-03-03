@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 	http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,29 +28,23 @@ import gaffer.store.StoreException;
 import gaffer.store.StoreProperties;
 import gaffer.store.StoreTrait;
 import gaffer.store.schema.StoreSchema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
+import org.apache.commons.io.IOUtils;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Properties;
 
 /**
  * The Graph separates the user from the {@link Store}. It holds an instance of the {@link Store} and
  * acts as a proxy for the store, delegating {@link Operation}s to the store.
- * <p/>
+ * <p>
  * The Graph provides users with a single point of entry for executing operations on a store.
  * This allows the underlying store to be swapped and the same operations can still be applied.
- * <p/>
+ * <p>
  * Graphs also provides a view of the data with a instance of {@link View}. The view filters out unwanted information
  * and can transform {@link gaffer.data.element.Properties} into transient properties such as averages.
- * <p/>
+ * <p>
  * When executing operations on a graph, an operation view would override the graph view.
  */
 public final class Graph {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Graph.class);
 
     /**
      * The instance of the store.
@@ -67,7 +61,7 @@ public final class Graph {
     /**
      * Constructs a <code>Graph</code> with the {@link java.nio.file.Path}s to the various JSON schemas and
      * the store property file.
-     * <p/>
+     * <p>
      * A full graph {@link gaffer.data.elementdefinition.view.View} will be automatically generated based on the
      * {@link gaffer.data.elementdefinition.schema.DataSchema}, i.e no filtering or transformations will be done.
      *
@@ -86,7 +80,7 @@ public final class Graph {
     /**
      * Constructs a <code>Graph</code> with the {@link java.nio.file.Path}s to the various JSON schemas and
      * the store property file.
-     * <p/>
+     * <p>
      * A full graph {@link gaffer.data.elementdefinition.view.View} will be automatically generated based on the
      * {@link gaffer.data.elementdefinition.schema.DataSchema}, i.e no filtering or transformations will be done.
      *
@@ -135,14 +129,13 @@ public final class Graph {
      */
     public Graph(final Path dataSchemaPath, final Path storeSchemaPath,
                  final Path storePropertiesPath, final Path schemaTypesPath, final View view) throws SchemaException {
-        this(createInputStream(dataSchemaPath), createInputStream(storeSchemaPath),
-                createInputStream(storePropertiesPath), createInputStream(schemaTypesPath), view);
+        this(createStore(dataSchemaPath, storeSchemaPath, storePropertiesPath, schemaTypesPath), view);
     }
 
     /**
      * Constructs a <code>Graph</code> with the {@link java.io.InputStream}s for the various JSON schemas and
      * the store property file.
-     * <p/>
+     * <p>
      * A full graph {@link gaffer.data.elementdefinition.view.View} will be automatically generated based on the
      * {@link gaffer.data.elementdefinition.schema.DataSchema}, i.e no filtering or transformations will be done.
      *
@@ -161,7 +154,7 @@ public final class Graph {
     /**
      * Constructs a <code>Graph</code> with the {@link java.io.InputStream}s for the various JSON schemas and
      * the store property file.
-     * <p/>
+     * <p>
      * A full graph {@link gaffer.data.elementdefinition.view.View} will be automatically generated based on the
      * {@link gaffer.data.elementdefinition.schema.DataSchema}, i.e no filtering or transformations will be done.
      *
@@ -215,7 +208,7 @@ public final class Graph {
 
     /**
      * Constructs a <code>Graph</code> with the various schemas and the store property file.
-     * <p/>
+     * <p>
      * A full graph {@link gaffer.data.elementdefinition.view.View} will be automatically generated based on the
      * {@link gaffer.data.elementdefinition.schema.DataSchema}, i.e no filtering or transformations will be done.
      *
@@ -249,7 +242,7 @@ public final class Graph {
 
     /**
      * Constructs a <code>Graph</code> with the given {@link gaffer.store.Store}.
-     * <p/>
+     * <p>
      * A full graph {@link gaffer.data.elementdefinition.view.View} will be automatically generated based on the
      * {@link gaffer.data.elementdefinition.schema.DataSchema}, i.e no filtering or transformations will be done.
      *
@@ -282,6 +275,7 @@ public final class Graph {
      * @param operation the operation to be executed.
      * @param <OUTPUT>  the operation output type.
      * @return the operation result.
+     * @throws OperationException if an operation fails
      */
     public <OUTPUT> OUTPUT execute(final Operation<?, OUTPUT> operation) throws OperationException {
         return execute(new OperationChain<>(operation));
@@ -294,6 +288,7 @@ public final class Graph {
      * @param operationChain the operation chain to be executed.
      * @param <OUTPUT>       the operation chain output type.
      * @return the operation result.
+     * @throws OperationException if an operation fails
      */
     public <OUTPUT> OUTPUT execute(final OperationChain<OUTPUT> operationChain) throws OperationException {
         for (Operation operation : operationChain.getOperations()) {
@@ -325,15 +320,29 @@ public final class Graph {
      * @param storeTrait the store trait to check
      * @return true if the store has the given trait.
      */
-    public boolean hasTrait(StoreTrait storeTrait) {
+    public boolean hasTrait(final StoreTrait storeTrait) {
         return store.hasTrait(storeTrait);
     }
 
-    private static Store createStore(final InputStream dataSchemaStream, final InputStream storeSchemaStream, final InputStream storePropertiesStream, final InputStream schemaTypesStream) {
-        final StoreProperties storeProperties = loadStoreProperties(storePropertiesStream);
-        DataSchema dataSchema = loadDataSchema(dataSchemaStream, schemaTypesStream);
-        StoreSchema storeSchema = loadStoreSchema(storeSchemaStream, storeProperties.getStoreSchemaClass());
+    private static Store createStore(final Path dataSchemaPath, final Path storeSchemaPath, final Path storePropertiesPath, final Path schemaTypesPath) {
+        final StoreProperties storeProperties = StoreProperties.loadStoreProperties(storePropertiesPath);
+        DataSchema dataSchema = loadDataSchema(dataSchemaPath, schemaTypesPath);
+        StoreSchema storeSchema = loadStoreSchema(storeSchemaPath, storeProperties.getStoreSchemaClass());
         return createStore(dataSchema, storeSchema, storeProperties);
+    }
+
+    private static Store createStore(final InputStream dataSchemaStream, final InputStream storeSchemaStream, final InputStream storePropertiesStream, final InputStream schemaTypesStream) {
+        try {
+            final StoreProperties storeProperties = StoreProperties.loadStoreProperties(storePropertiesStream);
+            DataSchema dataSchema = loadDataSchema(dataSchemaStream, schemaTypesStream);
+            StoreSchema storeSchema = loadStoreSchema(storeSchemaStream, storeProperties.getStoreSchemaClass());
+            return createStore(dataSchema, storeSchema, storeProperties);
+        } finally {
+            IOUtils.closeQuietly(dataSchemaStream);
+            IOUtils.closeQuietly(storeSchemaStream);
+            IOUtils.closeQuietly(storePropertiesStream);
+            IOUtils.closeQuietly(schemaTypesStream);
+        }
     }
 
     private static Store createStore(final DataSchema dataSchema, final StoreSchema storeSchema, final StoreProperties storeProperties) {
@@ -357,6 +366,20 @@ public final class Graph {
         return newStore;
     }
 
+    private static DataSchema loadDataSchema(final Path path, final Path typePath) throws SchemaException {
+        final DataSchema dataSchema = DataSchema.fromJson(path);
+
+        if (null != typePath) {
+            dataSchema.addTypesFromPath(typePath);
+        }
+
+        if (!dataSchema.validate()) {
+            throw new SchemaException("ERROR: data schema failed to validate. Please check the logs for more information");
+        }
+
+        return dataSchema;
+    }
+
     private static DataSchema loadDataSchema(final InputStream stream, final InputStream typeStream) throws SchemaException {
         final DataSchema dataSchema = DataSchema.fromJson(stream);
 
@@ -369,6 +392,22 @@ public final class Graph {
         }
 
         return dataSchema;
+    }
+
+    private static StoreSchema loadStoreSchema(final Path storeSchemaPath, final String storeSchemaClass) throws SchemaException {
+        final StoreSchema storeSchema;
+
+        try {
+            storeSchema = StoreSchema.fromJson(storeSchemaPath, Class.forName(storeSchemaClass).asSubclass(StoreSchema.class));
+        } catch (ClassNotFoundException e) {
+            throw new SchemaException("Store schema class was not found: " + storeSchemaClass, e);
+        }
+
+        if (!storeSchema.validate()) {
+            throw new SchemaException("ERROR: store schema failed to validate. Please check the logs for more information");
+        }
+
+        return storeSchema;
     }
 
     private static StoreSchema loadStoreSchema(final InputStream storeSchemaStream, final String storeSchemaClass) throws SchemaException {
@@ -385,47 +424,5 @@ public final class Graph {
         }
 
         return storeSchema;
-    }
-
-    private static StoreProperties loadStoreProperties(final InputStream storePropertiesStream) {
-        if (null == storePropertiesStream) {
-            return new StoreProperties();
-        }
-
-        final Properties props = new Properties();
-        try {
-            props.load(storePropertiesStream);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load store properties file : " + e.getMessage(), e);
-        } finally {
-            try {
-                storePropertiesStream.close();
-            } catch (IOException e) {
-                LOGGER.error("Failed to close store properties stream: " + e.getMessage(), e);
-            }
-        }
-
-        final String storePropertiesClass = props.getProperty(StoreProperties.STORE_PROPERTIES_CLASS);
-        final StoreProperties storeProperties;
-        if (null == storePropertiesClass) {
-            storeProperties = new StoreProperties();
-        } else {
-            try {
-                storeProperties = Class.forName(storePropertiesClass).asSubclass(StoreProperties.class).newInstance();
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException("Failed to create store properties file : " + e.getMessage(), e);
-            }
-        }
-
-        storeProperties.setProperties(props);
-        return storeProperties;
-    }
-
-    private static InputStream createInputStream(final Path path) {
-        try {
-            return null != path ? Files.newInputStream(path) : null;
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Failed to create input stream from path: " + path, e);
-        }
     }
 }

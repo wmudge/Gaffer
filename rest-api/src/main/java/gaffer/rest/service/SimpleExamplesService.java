@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 	http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,13 +48,11 @@ import gaffer.rest.example.ExampleDomainObject;
 import gaffer.rest.example.ExampleDomainObjectGenerator;
 import gaffer.rest.example.ExampleFilterFunction;
 import gaffer.rest.example.ExampleTransformFunction;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Locale;
 
 
 public class SimpleExamplesService implements IExamplesService {
@@ -291,9 +289,7 @@ public class SimpleExamplesService implements IExamplesService {
     }
 
     protected void populateOperation(final Operation operation) {
-        final Map<Object, Object> options = new HashMap<>();
-        options.put("authorisations", "auth");
-        operation.setOptions(options);
+        // override to add options to the operation
     }
 
     protected Entity getEntity(final int uniqueId) {
@@ -334,7 +330,7 @@ public class SimpleExamplesService implements IExamplesService {
     }
 
     protected boolean isAnEdgeDirected() {
-        return !getDataSchema().getEdge(getAnEdgeGroup()).getDirected().toLowerCase().contains("false");
+        return !getDataSchema().getEdge(getAnEdgeGroup()).getDirected().toLowerCase(Locale.getDefault()).contains("false");
     }
 
     protected String getAnEntityPropertyName() {
@@ -414,7 +410,7 @@ public class SimpleExamplesService implements IExamplesService {
         } else if (Float.class.equals(clazz)) {
             value = (float) uniqueId;
         } else if (Date.class.equals(clazz)) {
-            value = new Date(uniqueId);
+            value = new Date(System.currentTimeMillis() - 10000 + uniqueId);
         } else {
             try {
                 value = clazz.newInstance();

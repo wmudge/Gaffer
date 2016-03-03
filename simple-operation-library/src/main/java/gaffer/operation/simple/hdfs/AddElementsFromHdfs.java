@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 	http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,6 +22,7 @@ import gaffer.operation.VoidOutput;
 import gaffer.operation.simple.hdfs.handler.jobfactory.JobInitialiser;
 import gaffer.operation.simple.hdfs.handler.mapper.MapperGenerator;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.Partitioner;
 
 
 /**
@@ -30,9 +31,9 @@ import org.apache.hadoop.fs.Path;
  * It order to be generic and deal with any type of input file you also need to provide a
  * {@link gaffer.operation.simple.hdfs.handler.mapper.MapperGenerator} class name and a
  * {@link gaffer.operation.simple.hdfs.handler.jobfactory.JobInitialiser}.
- * <p/>
+ * <p>
  * For normal operation handlers the operation {@link gaffer.data.elementdefinition.view.View} will be ignored.
- * <p/>
+ * </p>
  * <b>NOTE</b> - currently this job has to be run as a hadoop job.
  *
  * @see gaffer.operation.simple.hdfs.AddElementsFromHdfs.Builder
@@ -41,7 +42,8 @@ public class AddElementsFromHdfs extends AbstractOperation<Void, Void> implement
     private Path inputPath;
     private Path outputPath;
     private Path failurePath;
-    private int numReduceTasks = 1;
+    private Integer numReduceTasks = null;
+    private Integer numMapTasks = null;
     private boolean validate = true;
 
     /**
@@ -60,6 +62,7 @@ public class AddElementsFromHdfs extends AbstractOperation<Void, Void> implement
      * For Text data see {@link gaffer.operation.simple.hdfs.handler.jobfactory.TextJobInitialiser}.
      */
     private JobInitialiser jobInitialiser;
+    private Class<? extends Partitioner> partitioner;
 
     public Path getInputPath() {
         return inputPath;
@@ -114,12 +117,28 @@ public class AddElementsFromHdfs extends AbstractOperation<Void, Void> implement
         this.jobInitialiser = jobInitialiser;
     }
 
-    public int getNumReduceTasks() {
+    public Integer getNumMapTasks() {
+        return numMapTasks;
+    }
+
+    public void setNumMapTasks(final Integer numMapTasks) {
+        this.numMapTasks = numMapTasks;
+    }
+
+    public Integer getNumReduceTasks() {
         return numReduceTasks;
     }
 
-    public void setNumReduceTasks(int numReduceTasks) {
+    public void setNumReduceTasks(final Integer numReduceTasks) {
         this.numReduceTasks = numReduceTasks;
+    }
+
+    public Class<? extends Partitioner> getPartitioner() {
+        return partitioner;
+    }
+
+    public void setPartitioner(final Class<? extends Partitioner> partitioner) {
+        this.partitioner = partitioner;
     }
 
     public static class Builder extends AbstractOperation.Builder<AddElementsFromHdfs, Void, Void> {
@@ -157,8 +176,18 @@ public class AddElementsFromHdfs extends AbstractOperation<Void, Void> implement
             return this;
         }
 
-        public Builder reducers(final int numReduceTasks) {
+        public Builder reducers(final Integer numReduceTasks) {
             op.setNumReduceTasks(numReduceTasks);
+            return this;
+        }
+
+        public Builder mappers(final Integer numMapTasks) {
+            op.setNumMapTasks(numMapTasks);
+            return this;
+        }
+
+        public Builder partioner(final Class<? extends Partitioner> partitioner) {
+            op.setPartitioner(partitioner);
             return this;
         }
 

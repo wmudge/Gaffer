@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 	http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +24,6 @@ import gaffer.function.AggregateFunction;
 import gaffer.function.context.PassThroughFunctionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,7 +36,7 @@ import java.util.Set;
  * aggregator functions or all properties have aggregator functions defined.
  */
 public class DataElementDefinitionValidator extends TypedElementDefinitionValidator<DataElementDefinition> {
-    private final Logger LOGGER = LoggerFactory.getLogger(DataElementDefinitionValidator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataElementDefinitionValidator.class);
 
     /**
      * Carries out the validation as per {@link gaffer.data.elementdefinition.TypedElementDefinitionValidator} and then
@@ -60,12 +59,12 @@ public class DataElementDefinitionValidator extends TypedElementDefinitionValida
     }
 
     private boolean validateAggregator(final ElementAggregator aggregator, final DataElementDefinition elementDef) {
-        if (aggregator == null) {
-            // if aggregator IS NOT defined, then aggregator is valid
+        if (null == aggregator || null == aggregator.getFunctions()) {
+            // if aggregate functions are not defined then it is valid
             return true;
         }
 
-        // if aggregator IS defined, check all properties are aggregated
+        // if aggregate functions are defined then check all properties are aggregated
         final Set<String> aggregatedProperties = new HashSet<>();
         if (aggregator.getFunctions() != null) {
             for (PassThroughFunctionContext<ElementComponentKey, AggregateFunction> context : aggregator.getFunctions()) {

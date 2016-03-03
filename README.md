@@ -4,13 +4,15 @@
   you may not use this file except in compliance with the License.
   You may obtain a copy of the License at
 
- 	http://www.apache.org/licenses/LICENSE-2.0
+     http://www.apache.org/licenses/LICENSE-2.0
 
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
+<img src="logos/logoWithText.png" width="300">
 
 Gaffer
 ======
@@ -84,5 +86,7 @@ The Accumulo store needs to run on a Hadoop cluster with Accumulo installed. Aft
  - Any jars that contain custom functions or serialisers you want to use to serialise or manage the data in Accumulo.
 
 Adding files to Accumulo's tablet server classpaths is typically done by putting the jar in the lib directory within Accumulo's directory.
+
+[Javadoc] (http://governmentcommunicationsheadquarters.github.io/Gaffer/)
 
 We are working on a more detailed user guide.
